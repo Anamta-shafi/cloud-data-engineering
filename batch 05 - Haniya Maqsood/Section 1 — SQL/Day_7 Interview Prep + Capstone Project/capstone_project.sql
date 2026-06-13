@@ -35,8 +35,9 @@
 --    PRIMARY KEY, IDENTITY(1,1), NOT NULL, UNIQUE,
 --    DEFAULT, CHECK, REFERENCES
 -- ============================================================
--- create database retail_store;
- create  schema retailmart
+
+ create  schema retailmart;
+ go
 
 
 -- ============================================================
@@ -192,6 +193,7 @@ CREATE TABLE retailmart.order_items (
 -- ============================================================
 
 -- INSERT categories
+
 INSERT INTO retailmart.categories (category_name) VALUES
 ('Electronics'), ('Clothing'), ('Groceries'), ('Accessories'), ('Home Appliances');
 
@@ -253,8 +255,8 @@ INSERT INTO retailmart.order_items (order_id, product_id, quantity, unit_price) 
 (8,  2,  1, 295000),
 (9,  4,  2,   8500),
 (10, 9,  1,  18000);
-
 -- UPDATE: Reduce price of Electric Kettle by 10%
+select * from retailmart.products where product_id = 10;
 UPDATE retailmart.products
 SET price = price * 0.90
 WHERE product_id = 10;
@@ -273,12 +275,16 @@ DELETE FROM retailmart.orders       WHERE order_id = 8;
 -- ============================================================
 
 -- All products under Rs. 5,000
-
+select * from retailmart.products
+where price < 5000;
 
 -- Customers from Karachi
+select * from [retailmart].[customers]
+where city = 'Karachi';
 
 -- Orders placed in 2024 sorted by date descending
-
+select * from [retailmart].[orders]
+where year(order_date) = '2024';
 
 -- ============================================================
 --  TASK 4: JOINs — INNER, LEFT, RIGHT
@@ -286,6 +292,19 @@ DELETE FROM retailmart.orders       WHERE order_id = 8;
 
 -- INNER JOIN: Orders with customer name and product details
 
+select 
+c.customer_id,
+c.full_name,
+o.order_id,
+o.order_date,
+p.product_name
+from [retailmart].[customers] c
+inner join [retailmart].[orders]o
+on c.customer_id=o.customer_id
+inner join [retailmart].[order_items]oi
+on oi.order_id=o.order_id
+inner join [retailmart].[products]p
+on p.product_id=oi.product_id;
 
 -- LEFT JOIN: All customers including those with no orders
 
@@ -293,11 +312,25 @@ DELETE FROM retailmart.orders       WHERE order_id = 8;
 
 
 
--- ============================================================
+-- ===========================================================
 --  TASK 5: GROUP BY + CASE
 -- ============================================================
 
 -- Total revenue by store and category 
+SELECT
+	s.store_name,
+	c.category_name,
+	SUM(oi.quantity* oi.unit_price) AS total_revenue
+FROM [retailmart].[orders] o
+JOIN [retailmart].[stores] s
+ON s.store_id = o.store_id
+JOIN [retailmart].[order_items] oi
+ON o.order_id = oi.order_id
+JOIN [retailmart].[products] p
+ON p.product_id = oi.product_id
+JOIN [retailmart].[categories] c
+ON p.category_id = c.category_id
+GROUP BY 	s.store_name,c.category_name;
 
 -- Label each product as Budget / Mid-range / Premium using CASE
 
@@ -310,7 +343,11 @@ DELETE FROM retailmart.orders       WHERE order_id = 8;
 
 
 -- Orders where the total exceeds the average order value (subquery in WHERE)
-
+select o.order_id, sum([quantity]*[unit_price]) as total
+from [retailmart].[order_items] o 
+group by o.order_id
+having sum([quantity]*[unit_price]) >
+(select avg([quantity]*[unit_price]) from [retailmart].[order_items]) --59,123
 
 
 -- ============================================================
@@ -323,8 +360,14 @@ DELETE FROM retailmart.orders       WHERE order_id = 8;
 -- INTERSECT: Customers who ordered from BOTH store 1 AND store 2
 
 -- EXCEPT: Customers who have NEVER placed an order
+-- A - B A = {1,2,3,4} , B= {2,4,6,7}===== A-B = {1,3}
+select customer_id from [retailmart].[customers] --A
+except
+select customer_id from [retailmart].[orders] -- B
 
-
+SELECT PRODUCT_ID FROM [retailmart].[products]
+EXCEPT
+SELECT PRODUCT_ID FROM [retailmart].[order_items]
 
 -- ============================================================
 --  HOUR 3 — ADVANCED & AUTOMATE
@@ -336,13 +379,26 @@ DELETE FROM retailmart.orders       WHERE order_id = 8;
 
 -- Regular CTE: Top 5 customers by total spend
 
-
+JOIN CUSTOMERS --- JOIN -- ORDERS --  JOIN - ORDER ITEMS --- QUANTITY * UNIT_PRICE
+GROUP CUSTOMER_ID -- TOTAL SPENDING 
+TOP 5
 -- ============================================================
 --  TASK 10: Window functions
 -- ============================================================
 
 -- ROW_NUMBER and RANK: Products ranked by revenue
 
+CTE( PRODUCT -- JOIN -- ORDER ITEMS -- 
+GROUP BY PRODUCT -- SUM(UNIT_PRICE* QUANTITY) -- REVENUE)
+
+WITH CTE AS (
+SELECT P.PRODUCT_ID, SUM(OI.UNIT_PRICE*OI.UNIT_PRICE) AS REVENUE
+FROM [retailmart].[products] P INNER JOIN [retailmart].[order_items] OI
+ON OI.product_id = P.product_id
+GROUP BY P.PRODUCT_ID)
+
+
+SELECT product_id, ROW_NUMBER() OVER(ORDER BY REVENUE DESC) AS RN FROM CTE
 
 
 -- Running total of revenue by store
