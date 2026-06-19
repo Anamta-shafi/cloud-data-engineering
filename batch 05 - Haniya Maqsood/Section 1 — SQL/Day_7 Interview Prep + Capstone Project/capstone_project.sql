@@ -460,7 +460,6 @@ EXEC retailmart.sp_MonthlySalesReport @StoreID = 2;
 --  DML         INSERT, UPDATE, DELETE, MERGE
 --  Querying    SELECT, WHERE, ORDER BY
 --  Joins       INNER, LEFT, RIGHT
---  Aggregation GROUP BY, ROLLUP, CUBE, GROUPING SETS
 --  CASE        Price tier labelling
 --  Subqueries  Inline
 --  Set ops     UNION, INTERSECT, EXCEPT
@@ -468,6 +467,6 @@ EXEC retailmart.sp_MonthlySalesReport @StoreID = 2;
 --  Windows     ROW_NUMBER, RANK
 --  PIVOT       Monthly revenue matrix
 --  Views       Standard + Indexed
---  Indexes     Composite, Filtered, Non-clustered
+--  Indexes     Clustered, Non-clustered
 --  Procedures  Parameters, defaults
 -- ============================================================
